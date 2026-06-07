@@ -35,7 +35,6 @@ export const createChat = async (req, res) => {
       return res.status(400).json({ error: 'API key not provided' });
     }
 
-    console.log('Using API key:', apiKey.substring(0, 10) + '...');
     const reply = await callOpenRouter(model, [{ role: 'user', content: userMessage }], apiKey);
 
     if (reply) {
@@ -165,15 +164,14 @@ export const updateChatTitle = async (req, res) => {
 };
 
 async function callOpenRouter(model, messages, apiKey) {
-   console.log('Full API key being used:', apiKey);
-  console.log('Key length:', apiKey?.length);
-  
   try {
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': 'http://localhost:3000',
+        'X-Title': 'Vishal AI Agent',
       },
       body: JSON.stringify({
         model,
@@ -196,7 +194,6 @@ async function callOpenRouter(model, messages, apiKey) {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      console.error('OpenRouter response:', res.status, err);
       throw new Error(err?.error?.message || `API Error ${res.status}`);
     }
 

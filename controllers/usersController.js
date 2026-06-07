@@ -1,9 +1,11 @@
 import { User } from '../models/User.js';
 
 export async function updateSettings(req, res) {
+  console.log("call update setting")
   try {
-    const userId = req.userId;
+    const userId = req.userId; 
     const { apiKey, model } = req.body;
+    console.log('userId',userId)
 
     if (!userId) {
       return res.status(400).json({ message: 'User ID not found' });

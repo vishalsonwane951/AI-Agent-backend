@@ -12,10 +12,16 @@ const PORT = process.env.PORT || 5000;
 console.log('OpenRouter API Key:', process.env.OPENROUTER_API_KEY ? 'Set ✓' : 'Not set ✗');
 
 app.use(express.json());
-app.use(cors({
-  origin: "https://ai-agent-psi-rust.vercel.app",
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:3000",
+      "https://ai-agent-psi-rust.vercel.app",
+    ],
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 
