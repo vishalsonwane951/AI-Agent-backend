@@ -10,8 +10,13 @@ export const authMiddleware = (req, res, next) => {
   try {
     const decoded = jwt.decode(token, process.env.JWT_SECRET);
     req.userId = decoded.userId;
+    
     next();
-  } catch (error) {
+  console.log('JWT_SECRET loaded:', !!process.env.JWT_SECRET);
+console.log('Decoded ID:', decoded);}
+   catch (error) {
     res.status(401).json({ error: 'Invalid token' });
   }
 };
+
+

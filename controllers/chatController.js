@@ -1,5 +1,10 @@
 import { Chat } from '../models/Chat.js';
 
+// Add these 2 lines at the very top of the file, after imports:
+const BLOCKED_MODELS = ['openai/gpt-oss-20b:free', 'openai/gpt-oss-20b','deepseek/deepseek-r1:free'];
+const SAFE_MODEL = 'openrouter/auto';
+const getSafeModel = (model) => BLOCKED_MODELS.includes(model) ? SAFE_MODEL : model;
+
 export const getChatList = async (req, res) => {
   try {
     const chats = await Chat.find({ userId: req.userId }).select('_id title model createdAt updatedAt');
@@ -11,7 +16,10 @@ export const getChatList = async (req, res) => {
 
 export const createChat = async (req, res) => {
   try {
-    const { model = 'mistralai/mistral-7b-instruct', userMessage, userApiKey } = req.body;
+    let { model = SAFE_MODEL, userMessage, userApiKey } = req.body;
+
+    // ✅ Override blocked models
+    model = getSafeModel(model);
 
     if (!userMessage) {
       return res.status(400).json({ error: 'User message required' });
@@ -19,7 +27,7 @@ export const createChat = async (req, res) => {
 
     const chat = new Chat({
       userId: req.userId,
-      model,
+      model,                        // ✅ saves safe model to DB
       userApiKey: userApiKey || null,
       messages: [
         {
@@ -164,13 +172,17 @@ export const updateChatTitle = async (req, res) => {
 };
 
 async function callOpenRouter(model, messages, apiKey) {
+    console.log('Using API key:', apiKey?.substring(0, 15) + '...'); // ✅ shows first 15 chars
+  console.log('Model:', model);
   try {
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': 'http://localhost:3000',
+        // 'HTTP-Referer': 'http://localhost:3000',
+        'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:3000',
+
         'X-Title': 'Vishal AI Agent',
       },
       body: JSON.stringify({
@@ -192,8 +204,13 @@ async function callOpenRouter(model, messages, apiKey) {
       }),
     });
 
+    //  if (res.status === 429) {
+    //   throw new Error('This model is currently rate-limited. Please try a different model or retry in a moment.');
+    // }
+
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
+      console.error('OpenRouter full error:', JSON.stringify(err, null, 2)); // ✅ add this
       throw new Error(err?.error?.message || `API Error ${res.status}`);
     }
 
